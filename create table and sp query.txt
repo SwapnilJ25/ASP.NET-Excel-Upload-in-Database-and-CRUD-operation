@@ -1,0 +1,101 @@
+-----Insert alldata in first database
+
+CREATE TABLE [dbo].[ASP_Insert_data](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[Name] [nvarchar](max) NULL,
+	[Age] [nvarchar](50) NULL,
+	[DOB] [nvarchar](max) NULL,
+	[Mobile] [nvarchar](50) NULL,
+	[Email] [nvarchar](max) NULL,
+	[City] [nvarchar](max) NULL,
+	[Address] [nvarchar](max) NULL,
+	[Remark] [nvarchar](50) NULL,
+	[InsertedDate] [datetime] NULL
+)
+
+
+
+
+---------final database where remark is null database
+
+CREATE TABLE [dbo].[ASP_Insert_data_final](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[Name] [nvarchar](max) NULL,
+	[Age] [nvarchar](50) NULL,
+	[DOB] [nvarchar](max) NULL,
+	[Mobile] [nvarchar](50) NULL,
+	[Email] [nvarchar](max) NULL,
+	[City] [nvarchar](max) NULL,
+	[Address] [nvarchar](max) NULL,
+	[Remark] [nvarchar](50) NULL,
+	[InsertedDate] [datetime] NULL
+)
+
+
+
+
+
+----------- stored procedure to insert data in database
+
+
+CREATE PROCEDURE [dbo].[asp_swapnil]
+    @name NVARCHAR(MAX) = NULL,
+    @age  NVARCHAR(MAX) = NULL,
+    @Dob  NVARCHAR(MAX) = NULL,
+    @mobile  NVARCHAR(50) = NULL,
+    @email NVARCHAR(MAX) = NULL,
+    @city NVARCHAR(MAX) = NULL,
+    @address NVARCHAR(MAX) = NULL
+AS
+BEGIN
+
+
+ -- Construct the dynamic SQL statement for inserting into Dumy_EmployeeData
+	INSERT INTO ASP_Insert_data (Name, Age, DOB, Mobile, Email, City, Address, Remark)
+	VALUES ('' + ISNULL(@name, 'NULL') + '', '' + ISNULL(@age, 'NULL') + '', '' + ISNULL(@Dob, 'NULL') + '',
+			'' + ISNULL(@mobile, 'NULL') + '', '' + ISNULL(@email, 'NULL') + '', '' + ISNULL(@city, 'NULL') + '',
+                '' + ISNULL(@address, 'NULL') + '', NULL);
+
+UPDATE ASP_Insert_data
+    SET Remark = CASE 
+		WHEN Name IS NULL OR Name ='NULL' THEN 'Please Enter Name' 
+		WHEN DOB IS NULL OR Dob ='NULL' THEN 'Please Enter DOB'
+		WHEN Mobile IS NULL OR Mobile = 'NULL'  THEN 'Please Enter Mobile'
+
+		WHEN Name IS NULL OR Name ='NULL' AND DOB IS NULL OR Dob ='NULL' AND Mobile IS NULL OR Mobile = 'NULL'  THEN 'Please Enter Name'
+		
+		WHEN ISNUMERIC(Name) = 1 THEN 'Please Enter Valid Name'
+		
+		WHEN  ISNUMERIC(Mobile) = 0  THEN 'Please Enter Valid Mobile Number'
+
+		WHEN ISNUMERIC(Age) = 0 THEN 'Please Enter Valid Age'
+
+		WHEN ISDATE(DOB) = 0 THEN 'Please Enter Valid DOB'
+
+		WHEN Email NOT LIKE '%@%.%' THEN 'Please Enter Valid Email'
+           
+		WHEN Name IS NOT NULL OR Name <> 'NULL' AND DOB IS NOT NULL OR Dob <> 'NULL' AND Mobile IS NOT NULL AND Mobile <> 'NULL'
+			AND ISNUMERIC(Age) = 1 OR ISNUMERIC(Mobile) = 1 AND  
+			ISDATE(DOB) = 1 AND ISNUMERIC(Name) = 0 AND ISNUMERIC(City) = 0 AND ISNUMERIC(Address) = 0 THEN NULL
+		--else NULL
+        END;
+
+		INSERT INTO ASP_Insert_data_final (Name, Age, DOB, Mobile, Email, City, Address, Remark, InsertedDate)
+    SELECT Name, Age, DOB, Mobile, Email, City, Address, Remark, InsertedDate
+    FROM ASP_Insert_data as d
+    --WHERE Remark IS Null;
+	WHERE d.Remark IS NULL AND  
+		NOT EXISTS (
+			SELECT 1
+			FROM ASP_Insert_data_final AS a
+			WHERE d.Name = a.Name
+			  AND d.Age  = a.Age
+			  AND d.DOB  = a.DOB
+			  AND d.Mobile  = a.Mobile
+			  AND d.Email = a.Email
+			  AND d.City = a.City
+			  AND d.Address = a.Address
+		);
+
+END;
+GO
